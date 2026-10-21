@@ -3,7 +3,8 @@
 - Instrucciones del taller: instrucciones/Taller_2_Limpieza_de_Datos.pdf.
 - Entorno: contenedor con Jupyter Lab (imagen quay.io/jupyter/scipy-notebook), ejecutado con Docker (Dockerfile, docker-compose.yml, requirements.txt).
 - Carpeta de trabajo: ./work (en el contenedor: /home/jovyan/work).
-- Notebook de trabajo: work/taller2_<apellidos>_<nombres>.ipynb (nombre pendiente). Se construye por secciones:
+- Integrantes (ver README.md): Luis Alberto Banda, Maria Camila Rincón, Juan Pablo Marin, Gabriel Camilo Velasquez y Juan Camilo Guerrero.
+- Notebook de trabajo: work/Taller_2_Gestion_de_Datos.ipynb (nombre elegido por el grupo). Se construye por secciones:
 agrega cada sección al final y no modifiques las anteriores.
 - Datos: https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv
 - Diccionario de columnas: https://www.kaggle.com/c/titanic/data
