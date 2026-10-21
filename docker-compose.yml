@@ -1,0 +1,11 @@
+services:
+  notebook:
+    build: .
+    ports:
+      # Solo accesible desde esta máquina
+      - "127.0.0.1:8888:8888"
+    volumes:
+      # Carpeta de trabajo: notebook, titanic.csv, titanic_limpio.csv y reporte HTML
+      - ./work:/home/jovyan/work
+    # Jupyter Lab sin token ni contraseña (solo uso local)
+    command: start-notebook.py --IdentityProvider.token='' --ServerApp.password=''
