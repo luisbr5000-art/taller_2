@@ -12,7 +12,6 @@ El taller tiene un hilo conductor: el **Ejercicio 1** diagnostica cada columna y
 
 - **Datos:** https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv (891 filas × 12 columnas)
 - **Diccionario de columnas:** https://www.kaggle.com/c/titanic/data
-- **Enunciado:** [instrucciones/Taller_2_Limpieza_de_Datos.pdf](instrucciones/Taller_2_Limpieza_de_Datos.pdf)
 
 Todas las cifras de este documento salen de ejecutar el notebook y se reportan con todos sus decimales, sin redondear. Las cifras del diagnóstico que en sus celdas originales aparecen redondeadas se recalculan con todos sus decimales en la sección **4.3** del notebook.
 
@@ -26,6 +25,7 @@ Todas las cifras de este documento salen de ejecutar el notebook y se reportan c
 | `work/titanic_profiling.html` | Reporte exploratorio de ydata-profiling (dataset original) |
 | `work/titanic_limpio.csv` | Dataset limpio (entregable del Ejercicio 2) |
 | `work/figuras/` | Figuras de antes y después de `Age` y `Fare` |
+| `BITACORA.md` | Bitácora agéntica: prompts usados, modelo, créditos y correcciones |
 
 ## Cómo ejecutarlo
 
@@ -212,12 +212,20 @@ Los atípicos de `Age` (11), `SibSp` (46) y `Parch` (213) se conservan sin cambi
 
 El CSV no guarda el tipo `category`: al leer `titanic_limpio.csv` hay que indicarlo con `dtype={"Sex": "category", "Embarked": "category", "Titulo": "category"}`.
 
-## Conclusiones
+## Conclusiones del analista
 
-1. **Faltantes:** el problema principal del dataset no son los errores sino la falta de información. `Cabin` y `Age` concentran casi todos los faltantes, y sus faltantes dependen de la clase y de la supervivencia (MAR). Por eso se imputó condicionando en variables observadas en lugar de usar un valor global, y se dejaron indicadores para no perder la señal del faltante.
-2. **Atípicos:** los atípicos de este dataset son en su mayoría valores reales: tarifas de primera clase, familias numerosas y, sobre todo, **precios de tiquetes de grupo**. Por eso se acotaron en lugar de eliminarlos, no se perdió ninguna fila, y el tamaño del grupo se conservó como variable.
-3. **Redundancia:** el dataset limpio elimina la redundancia más fuerte (`SibSp` y `Parch` frente a `tamano_familia`) y los identificadores, sin perder la información útil que contenían (`Titulo` y `pasajeros_tiquete`).
-4. **Antes de entrenar un modelo** hay que:
-   - recalcular imputaciones, percentiles y conteos por tiquete solo con el conjunto de entrenamiento;
-   - evaluar el modelo con y sin `TieneCabina` y `EdadFaltante`, por el riesgo de leakage;
-   - agrupar los títulos poco frecuentes de `Titulo` (`Don`, `Lady`, `Sir`, `Capt`, etc. tienen 1 o 2 pasajeros) en una categoría `Otro`.
+Cada conclusión indica la celda del notebook que la respalda, según el número que Jupyter muestra a la izquierda de cada celda de código.
+
+1. **No fue necesario eliminar ningún pasajero.** No se encontraron registros duplicados, ni siquiera ignorando el identificador del pasajero (celda 20), y ningún registro tenía valores imposibles, como edades negativas o clases inexistentes (celda 23). El dataset limpio conserva los 891 pasajeros del original (celda 46).
+
+2. **La columna de cabina se eliminó por exceso de nulos, pero se conservó su información más útil.** Le faltaba el 77.10437710437711 % de los valores (celda 13): solo 204 pasajeros tenían cabina registrada, cuando el criterio fijado exigía al menos 446 (celda 25). Eliminar a los pasajeros sin cabina tampoco era opción, porque el 86.27450980392157 % de los que quedarían serían de primera clase (celda 18). Antes de eliminar la columna se creó un indicador de si el pasajero tenía o no cabina registrada (celda 25).
+
+3. **La edad se completó según la clase y el sexo del pasajero, porque sus faltantes no son aleatorios, aunque eso redujo su variabilidad.** La edad falta mucho más en tercera clase (27.698574338085542 %) que en segunda (5.978260869565218 %) (celda 13). Por eso las 177 edades faltantes se completaron con la mediana de los pasajeros de la misma clase y sexo (celda 28). La edad promedio cambió poco, de 29.69911764705882 a 29.11242424242424 años, pero la desviación estándar bajó de 14.526497332334044 a 13.304424074688153 (celda 29), y aparece una concentración artificial de pasajeros entre 25 y 30 años (celda 30). Se agregó un indicador que marca a qué pasajeros se les completó la edad.
+
+4. **Los faltantes disfrazados se identificaron y corrigieron antes de completar los datos.** Las 15 tarifas registradas en cero y los 4 tiquetes con el texto "LINE" se trataron como datos faltantes (celdas 21 y 22). Las tarifas en cero se completaron con la tarifa mediana de su clase: 61.9792 en primera, 15.0229 en segunda y 8.05 en tercera (celda 27). Los 2 pasajeros sin puerto de embarque, cuyo faltante es aleatorio, se asignaron al puerto más frecuente, Southampton (celda 26).
+
+5. **El recorte de las tarifas extremas redujo su peso sin perder información.** Se acotaron las tarifas entre los percentiles 5 y 95, lo que modificó 85 valores; con el criterio de Tukey se habrían recortado 116. El orden de las tarifas se mantuvo prácticamente igual: la correlación de Spearman entre antes y después es 0.9998221135170301 (celda 32). La tarifa promedio bajó de 32.204207968574636 a 28.22123552188552, y la desviación estándar de 49.693428597180905 a 29.14891277694091 (celda 33). La comparación gráfica está en la celda 34.
+
+6. **Las tarifas atípicas dentro de cada clase no son errores, sino precios de tiquetes de grupo.** Los pasajeros que comparten tiquete pagan la misma tarifa (de 134 tiquetes compartidos, solo 1 tiene dos tarifas distintas), y las 52 tarifas atípicas de tercera clase corresponden todas a tiquetes compartidos (celda 16). Se evaluó dividir la tarifa entre los pasajeros de cada tiquete, pero se descartó porque empeoraba el problema: los casos atípicos subían de 7 a 28 en segunda clase y de 52 a 103 en tercera (celda 35). En su lugar se guardó cuántos pasajeros comparten cada tiquete. Los 82 pasajeros con varios valores atípicos se conservaron, y el recorte no modificó ninguna de las 52 tarifas atípicas de tercera clase (celda 36).
+
+7. **Se eliminó la información repetida sin perder información útil.** Se creó el tamaño de la familia a bordo como la suma de hermanos o cónyuges, padres o hijos, y el propio pasajero (celda 38). Esa nueva variable está muy relacionada con las dos originales, con correlaciones de Spearman de 0.8491645107690946 y 0.8012240815976783 (celda 40). Por eso se eliminaron las dos originales, junto con el nombre y el número de tiquete, que funcionan como identificadores (celda 43). Del nombre se extrajo antes el título (Mr, Mrs, Miss, etc.) (celda 42). El resultado final tiene 891 pasajeros, 12 columnas y ningún dato faltante (celda 45).
